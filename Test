@@ -1,0 +1,47 @@
+from flask import Flask, request, jsonify, render_template
+import requests
+
+app = Flask(__name__)
+
+# Replace this URL with the actual backend URL
+BACKEND_URL = 'https://backend.url/endpoint'
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/fetch_case', methods=['POST'])
+def fetch_case():
+    case_id = request.form.get('case_id')
+    if not case_id:
+        return jsonify({"error": "case_id is required"}), 400
+
+    # Fetch case attributes from backend
+    response = requests.post(BACKEND_URL, json={"case_id": case_id})
+    if response.status_code != 200:
+        return jsonify({"error": "Failed to fetch case attributes"}), 500
+
+    case_attributes = response.json()
+
+    # Render template with case attributes for additional input
+    return render_template('case_form.html', case_attributes=case_attributes)
+
+@app.route('/submit_case', methods=['POST'])
+def submit_case():
+    case_id = request.form.get('case_id')
+    case_name = request.form.get('case_name')
+    reason = request.form.get('reason')
+    case_length = request.form.get('case_length')  # Capture the case_length value if present
+
+    # Combine all attributes into a summary
+    case_summary = {
+        "case_id": case_id,
+        "case_name": case_name,
+        "reason": reason,
+        "case_length": case_length,  # Add case_length to the summary if it was provided
+    }
+
+    return jsonify(case_summary)
+
+if __name__ == '__main__':
+    app.run(debug=True)
